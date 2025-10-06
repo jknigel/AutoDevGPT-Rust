@@ -6,7 +6,7 @@ use std::env;
 use reqwest::header::{ HeaderMap, HeaderValue };
 
 //Call Large Language Model (GPT-4)
-pub async fn call_gpt(messages: Vec<Message>) {
+pub async fn call_gpt(messages: Vec<Message>) -> Result<String, Box<dyn std::error::Error + Send>> {
     dotenv().ok();
 
     //Extract API key information
@@ -22,20 +22,22 @@ pub async fn call_gpt(messages: Vec<Message>) {
     //Create API key header
     headers.insert(
         "authorization",
-        HeaderValue::from_str(&format!("Bearer {}",api_key)).unwrap()
+        HeaderValue::from_str(&format!("Bearer {}",api_key))
+        .map_err(|e| -> Box<dyn std::error::Error + Send> { Box::new(e) })?
     );
 
     //Create Open AI Org header
     headers.insert(
         "OpenAI-Organization",
-        HeaderValue::from_str(org_key.as_str()).unwrap()
+        HeaderValue::from_str(org_key.as_str())
+        .map_err(|e| -> Box<dyn std::error::Error + Send> { Box::new(e) })?
     );
 
     //Create client
     let client = Client::builder()
     .default_headers(headers)
     .build()
-    .unwrap();
+    .map_err(|e| -> Box<dyn std::error::Error + Send> { Box::new(e) })?;
 
     //Create chat completion
     let chat_completion: ChatCompletion = ChatCompletion { 
@@ -44,15 +46,17 @@ pub async fn call_gpt(messages: Vec<Message>) {
         temperature: 0.1
     };
 
-    //Troubleshooting
-    let response_raw = client
-    .post(url)
-    .json(&chat_completion)
-    .send()
-    .await
-    .unwrap();
+    // //Troubleshooting
+    // let response_raw = client
+    // .post(url)
+    // .json(&chat_completion)
+    // .send()
+    // .await
+    // .unwrap();
 
-    dbg!(response_raw.text().await.unwrap());
+    // dbg!(response_raw.text().await.unwrap());
+
+    return Ok("some_string".to_string())
 }
 
 #[cfg(test)]
