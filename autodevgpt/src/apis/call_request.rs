@@ -1,7 +1,7 @@
-use crate::models::general::llm::{ ChatCompletion, Message };
+use crate::models::general::llm::{ ChatCompletion, Message, APIResponse };
 use dotenv::dotenv;
 use reqwest::Client;
-use std::env;
+use std::{env, f64::consts::E};
 
 use reqwest::header::{ HeaderMap, HeaderValue };
 
@@ -56,7 +56,19 @@ pub async fn call_gpt(messages: Vec<Message>) -> Result<String, Box<dyn std::err
 
     // dbg!(response_raw.text().await.unwrap());
 
-    return Ok("some_string".to_string())
+    //Extract API Response
+    let res: APIResponse = client
+    .post(url)
+    .json(&chat_completion)
+    .send()
+    .await
+    .map_err(|e| -> Box<dyn std::error::Error + Send> { Box::new(e) })?
+    .json()
+    .await
+    .map_err(|e| -> Box<dyn std::error::Error + Send> { Box::new(e) })?;
+
+    //Send Response
+    return Ok(res.choices[0].message.content.clone())
 }
 
 #[cfg(test)]
@@ -73,6 +85,15 @@ mod tests {
 
         let messages: Vec<Message> = vec!(message);
 
-        call_gpt(messages).await;
+        let res= call_gpt(messages).await;
+        match res {
+            Ok(res_str) => {
+                dbg!(res_str);
+                assert!(true);
+            },
+            Err(_) => {
+                assert!(false);
+            }
+        }
     }
 }
