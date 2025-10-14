@@ -10,6 +10,8 @@ use std::fs;
 const CODE_TEMPLATE_PATH: &str = "/web_template/code_template.rs";
 const MAIN_RS_PATH: &str = "/web_template/main.rs";
 const API_SCHEMA_PATH: &str = "/autodevgpt/schemas/api_schema.json";
+pub const EXEC_MAIN_PATH: &str = "/web_template/exec_main_template.rs";
+pub const WEB_SERVER_PROJECT_PATH: &str = "/web_template";
 
 // Extend ai function to encourage certain specific output
 pub fn extend_ai_function(ai_func: fn(&str) -> &'static str, func_input: &str) -> Message {
@@ -84,6 +86,12 @@ pub async fn check_status_code(client: &Client, url: &str) -> Result<u16, reqwes
 pub fn read_code_template_contents() -> String {
     let path: String = String::from(CODE_TEMPLATE_PATH);
     return fs::read_to_string(path).expect("Failed to read code template");
+}
+
+// Get Code Template
+pub fn read_exec_main_contents() -> String {
+    let path: String = String::from(EXEC_MAIN_PATH);
+    return fs::read_to_string(path).expect("Failed to read exec main template");
 }
 
 // Save New Backend Code
