@@ -116,3 +116,39 @@ impl AgentBackendDeveloper {
         return ai_response
     }
 }
+
+#[async_trait]
+impl SpecialFunctions for AgentBackendDeveloper {
+    fn get_attributes_from_agent(&self) -> &BasicAgent {
+        return &self.attributes
+    }
+
+    // This function allows agents to execute their logic
+    async fn execute(&mut self, factsheet: &mut FactSheet) -> Result<(), Box<dyn std::error::Error>> {
+        while self.attributes.state != AgentState::Finished {
+            match &self.attributes.state {
+                AgentState::Discovery => {
+                    self.call_initial_backend_code(factsheet).await;
+                    self.attributes.state = AgentState::Working;
+                    continue;
+                }
+                AgentState::Working => {
+                    if self.bug_count == 0 {
+                        self.call_improved_backend_code(factsheet).await;
+                        self.attributes.state = AgentState::UnitTesting;
+                        continue;
+                    } else {
+                        self.call_fix_code_bugs(factsheet).await;
+                        self.attributes.state = AgentState::UnitTesting;
+                        continue;
+                    }
+                }
+                AgentState::UnitTesting => {
+                    self.attributes.state = AgentState::Finished; //Temporary placeholder
+                }
+                _ => {}
+            }
+        }
+        return Ok(())
+    }
+}
