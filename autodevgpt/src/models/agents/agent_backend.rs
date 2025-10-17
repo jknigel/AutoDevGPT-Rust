@@ -204,7 +204,52 @@ impl SpecialFunctions for AgentBackendDeveloper {
 
                         //Pass back for rework
                         self.attributes.state = AgentState::Working;
+                        continue;
                     }
+
+                    /* Extract and Test Rest API Endpoints */
+
+                    //Extract API Endpoints
+                    let api_endpoints_str: String = self.call_extract_rest_api_endpoints().await;
+
+                    //Convert API Endpoints into values
+                    let api_endpoints: Vec<RouteObject> =
+                        serde_json::from_str(&api_endpoints_str.as_str()).expect("Failed to decode API Endpoints");
+
+                    // Define endpoints to check
+                    let check_endpoints: Vec<RouteObject> = api_endpoints
+                        .iter()
+                        .filter(|&route_object| {
+                            route_object.method == "get" && route_object.is_route_dynamic == "false"
+                        })
+                        .cloned()
+                        .collect();
+
+                    //Store API Endpoints
+                    factsheet.api_endpoint_schema = Some(api_endpoints.clone());
+
+                    // Run backend application
+                    PrintCommand::UnitTest.print_agent_message(
+                        self.attributes.position.as_str(),
+                        "Backend Code Unit Testing: Starting Web Server for API Endpoint Testing..."
+                    );
+
+                    let run_backend_server = Command::new("cargo")
+                        .arg("run")
+                        .current_dir(WEB_SERVER_PROJECT_PATH)
+                        .stdout(Stdio::piped())
+                        .stderr(Stdio::piped())
+                        .spawn()
+                        .expect("Failed to run backend application");
+                    
+                    //Let user know testing on server will take place soon
+                    PrintCommand::UnitTest.print_agent_message(
+                        self.attributes.position.as_str(),
+                        "Backend Code Unit Testing: Launching tests on server in 5 seconds..."
+                    );
+
+                    let seconds_sleep: Duration = Duration::from_secs(5);
+                    time::sleep(seconds_sleep).await;
 
                     self.attributes.state = AgentState::Finished;
                 }
