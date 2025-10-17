@@ -7,7 +7,7 @@ use crate::models::general::llm::Message;
 use reqwest::Client;
 use std::fs;
 
-const CODE_TEMPLATE_PATH: &str = "/web_template/code_template.rs";
+const CODE_TEMPLATE_PATH: &str = "../web_template/code_template.rs";
 const MAIN_RS_PATH: &str = "/web_template/main.rs";
 const API_SCHEMA_PATH: &str = "/autodevgpt/schemas/api_schema.json";
 pub const EXEC_MAIN_PATH: &str = "/web_template/exec_main_template.rs";

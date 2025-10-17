@@ -4,15 +4,17 @@ use crate::ai_functions::aifunc_backend::{
     print_rest_api_endpoints,
 };
 use crate::helpers::general::{
-    ai_task_request_decoded, check_status_code, read_code_template_contents, read_exec_main_contents, save_api_endpoints, save_backend_code, WEB_SERVER_PROJECT_PATH
+    WEB_SERVER_PROJECT_PATH, ai_task_request_decoded, check_status_code,
+    read_code_template_contents, read_exec_main_contents, save_api_endpoints, save_backend_code,
 };
 
-use crate::helpers::command_line::{confirm_safe_code, PrintCommand};
+use crate::helpers::command_line::{PrintCommand, confirm_safe_code};
 use crate::helpers::general::ai_task_request;
 use crate::models::agent_basic::basic_agent::{AgentState, BasicAgent};
 use crate::models::agents::agent_traits::{FactSheet, ProjectScope, RouteObject, SpecialFunctions};
 
 use async_trait::async_trait;
+use crossterm::style::Print;
 use reqwest::Client;
 use std::process::{Command, Stdio};
 use std::time::Duration;
@@ -38,15 +40,16 @@ impl AgentBackendDeveloper {
             attributes,
             bug_errors: None,
             bug_count: 0,
-        }
+        };
     }
-    
+
     async fn call_initial_backend_code(&mut self, factsheet: &mut FactSheet) {
         let code_template_str: String = read_code_template_contents();
 
         // Concat Instruction
         let mut msg_context: String = format!(
-            "CODE TEMPLATE: {} \n PROJECT DESCRIPTION: {} \n", code_template_str, factsheet.project_description
+            "CODE TEMPLATE: {} \n PROJECT DESCRIPTION: {} \n",
+            code_template_str, factsheet.project_description
         );
 
         let ai_response: String = ai_task_request(
@@ -54,7 +57,8 @@ impl AgentBackendDeveloper {
             &self.attributes.position,
             get_function_string!(print_backend_webserver_code),
             print_backend_webserver_code,
-        ).await;
+        )
+        .await;
 
         save_backend_code(&ai_response);
         factsheet.backend_code = Some(ai_response);
@@ -65,7 +69,8 @@ impl AgentBackendDeveloper {
 
         // Concat Instruction
         let mut msg_context: String = format!(
-            "CODE TEMPLATE: {:?} \n PROJECT DESCRIPTION: {:?} \n", factsheet.backend_code, factsheet
+            "CODE TEMPLATE: {:?} \n PROJECT DESCRIPTION: {:?} \n",
+            factsheet.backend_code, factsheet
         );
 
         let ai_response: String = ai_task_request(
@@ -73,14 +78,14 @@ impl AgentBackendDeveloper {
             &self.attributes.position,
             get_function_string!(print_improved_webserver_code),
             print_improved_webserver_code,
-        ).await;
+        )
+        .await;
 
         save_backend_code(&ai_response);
         factsheet.backend_code = Some(ai_response);
     }
 
     async fn call_fix_code_bugs(&mut self, factsheet: &mut FactSheet) {
-
         let msg_context: String = format!(
             "BROKEN_CODE: {:?} \n ERROR_BUGS: {:?} \n THIS FUNCTION ONLY OUTPUTS CODE. JUST OUTPUT THE CODE.",
             factsheet.backend_code, self.bug_errors
@@ -91,7 +96,8 @@ impl AgentBackendDeveloper {
             &self.attributes.position,
             get_function_string!(print_fixed_code),
             print_fixed_code,
-        ).await;
+        )
+        .await;
 
         save_backend_code(&ai_response);
         factsheet.backend_code = Some(ai_response);
@@ -101,30 +107,31 @@ impl AgentBackendDeveloper {
         let backend_code: String = read_exec_main_contents();
 
         // Structure message context
-        let msg_context: String = format!(
-            "BACKEND_CODE_INPUT: {}",
-            backend_code
-        );
+        let msg_context: String = format!("BACKEND_CODE_INPUT: {}", backend_code);
 
         let ai_response: String = ai_task_request(
             msg_context,
             &self.attributes.position,
             get_function_string!(print_rest_api_endpoints),
             print_rest_api_endpoints,
-        ).await;
+        )
+        .await;
 
-        return ai_response
+        return ai_response;
     }
 }
 
 #[async_trait]
 impl SpecialFunctions for AgentBackendDeveloper {
     fn get_attributes_from_agent(&self) -> &BasicAgent {
-        return &self.attributes
+        return &self.attributes;
     }
 
     // This function allows agents to execute their logic
-    async fn execute(&mut self, factsheet: &mut FactSheet) -> Result<(), Box<dyn std::error::Error>> {
+    async fn execute(
+        &mut self,
+        factsheet: &mut FactSheet,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         while self.attributes.state != AgentState::Finished {
             match &self.attributes.state {
                 AgentState::Discovery => {
@@ -144,11 +151,100 @@ impl SpecialFunctions for AgentBackendDeveloper {
                     }
                 }
                 AgentState::UnitTesting => {
-                    self.attributes.state = AgentState::Finished; //Temporary placeholder
+                    // Guard: Ensure AI Safety
+                    PrintCommand::UnitTest.print_agent_message(
+                        self.attributes.position.as_str(),
+                        "Backend code unit testing: Requesting user input",
+                    );
+
+                    let is_safe_code: bool = confirm_safe_code();
+
+                    if !is_safe_code {
+                        panic!("Better go work on some AI alignment instead...")
+                    }
+
+                    //Build and test code
+                    PrintCommand::UnitTest.print_agent_message(
+                        self.attributes.position.as_str(),
+                        "Backend code unit testing: Building web server...",
+                    );
+
+                    // Build code
+                    let build_backend_server: std::process::Output = Command::new("cargo")
+                        .arg("build")
+                        .current_dir(WEB_SERVER_PROJECT_PATH)
+                        .stdout(Stdio::piped())
+                        .stderr(Stdio::piped())
+                        .output()
+                        .expect("Failed to run backend application");
+
+                    // Determine if build errors
+                    if build_backend_server.status.success() {
+                        self.bug_count = 0;
+                        PrintCommand::UnitTest.print_agent_message(
+                            self.attributes.position.as_str(),
+                            "Backend code unit testing: Test server build successful...",
+                        );
+                    } else {
+                        let error_arr: Vec<u8> = build_backend_server.stderr;
+                        let error_str: String = String::from_utf8(error_arr).unwrap();
+
+                        //Update error status
+                        self.bug_count += 1;
+                        self.bug_errors = Some(error_str);
+
+                        //Exit if too many bugs
+                        if self.bug_count > 2 {
+                            PrintCommand::Issue.print_agent_message(
+                                self.attributes.position.as_str(),
+                                "Backend code unit testing: Too many bugs found in code",
+                            );
+                            panic!("Error: Too many bugs.")
+                        }
+
+                        //Pass back for rework
+                        self.attributes.state = AgentState::Working;
+                    }
+
+                    self.attributes.state = AgentState::Finished;
                 }
                 _ => {}
             }
         }
-        return Ok(())
+        return Ok(());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn tests_writing_backend_code() {
+        let mut agent: AgentBackendDeveloper = AgentBackendDeveloper::new();
+
+        let factsheet_str: &str = r#"
+      {
+        "project_description": "build a website that fetches and tracks fitness progress with timezone information",
+        "project_scope": {
+          "is_crud_required": true,
+          "is_user_login_and_logout": true,
+          "is_external_urls_required": true
+        },
+        "external_urls": [
+          "http://worldtimeapi.org/api/timezone"
+        ],
+        "backend_code": null,
+        "api_endpoint_schema": null
+      }"#;
+
+        let mut factsheet: FactSheet = serde_json::from_str(factsheet_str).unwrap();
+
+        agent
+            .execute(&mut factsheet)
+            .await
+            .expect("Failed to execute backend developer!");
+
+        dbg!(factsheet);
     }
 }
