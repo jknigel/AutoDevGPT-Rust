@@ -234,7 +234,8 @@ impl SpecialFunctions for AgentBackendDeveloper {
                         "Backend Code Unit Testing: Starting Web Server for API Endpoint Testing..."
                     );
 
-                    let run_backend_server = Command::new("cargo")
+                    // Execute running server
+                    let mut run_backend_server = Command::new("cargo")
                         .arg("run")
                         .current_dir(WEB_SERVER_PROJECT_PATH)
                         .stdout(Stdio::piped())
@@ -250,6 +251,78 @@ impl SpecialFunctions for AgentBackendDeveloper {
 
                     let seconds_sleep: Duration = Duration::from_secs(5);
                     time::sleep(seconds_sleep).await;
+
+                    // Check status code
+                    for endpoint in check_endpoints {
+                        // Confirm URL testing
+                        let testing_msg: String = format!(
+                            "Testing endpoint {} with method {}",
+                            endpoint.route, endpoint.method
+                        );
+                        PrintCommand::UnitTest.print_agent_message(
+                            self.attributes.position.as_str(),
+                            testing_msg.as_str(),
+                        );
+
+                        //Create client with timeout
+                        let client: Client = Client::builder()
+                            .timeout(Duration::from_secs(5))
+                            .build()
+                            .unwrap();
+
+                        // Test url
+                        let url: String = format!("http://localhost:8080{}", endpoint.route);
+                        match check_status_code(&client, &url).await {
+                            Ok(status_code) => {
+                                if status_code == 200 {
+                                    let success_msg: String = format!(
+                                        "Endpoint {} passed with status code {}",
+                                        endpoint.route, status_code
+                                    );
+                                    PrintCommand::UnitTest.print_agent_message(
+                                        self.attributes.position.as_str(),
+                                        success_msg.as_str(),
+                                    );
+                                } else {
+                                    let err_msg: String = format!(
+                                        "Endpoint {} failed with status code {}",
+                                        endpoint.route, status_code
+                                    );
+                                    PrintCommand::Issue.print_agent_message(
+                                        self.attributes.position.as_str(),
+                                        err_msg.as_str(),
+                                    );
+
+                                    // Update bug status
+                                    self.bug_count += 1;
+                                    self.bug_errors = Some(format!(
+                                        "Endpoint {} returned status code {}",
+                                        endpoint.route, status_code
+                                    ));
+                                }
+                            }
+                            Err(e) => {
+                                run_backend_server.kill().expect("Failed to kill backend server process");
+                                let err_msg: String = format!(
+                                    "Error checking backend {}: {}",
+                                    endpoint.route, e
+                                );
+                                PrintCommand::Issue.print_agent_message(
+                                    self.attributes.position.as_str(),
+                                    err_msg.as_str()
+                                );
+                            }
+                        }
+                    }
+
+                    save_api_endpoints(&api_endpoints_str);
+
+                    PrintCommand::Issue.print_agent_message(
+                        self.attributes.position.as_str(),
+                        "Backend Code Unit Testing: Stopping Web Server after API Endpoint Testing..."
+                    );
+
+                    run_backend_server.kill().expect("Failed to kill backend server process");
 
                     self.attributes.state = AgentState::Finished;
                 }
