@@ -12,7 +12,7 @@ pub enum PrintCommand {
 }
 
 impl PrintCommand {
-    pub fn print_agent_message(&self, agent_pos: &str, agent_statement: &str) -> String {
+    pub fn print_agent_message(&self, agent_pos: &str, agent_statement: &str) {
         let mut stdout: std::io::Stdout = stdout();
 
         // Decide on the print colour
@@ -36,14 +36,6 @@ impl PrintCommand {
 
         // Reset Color
         stdout.execute(ResetColor).unwrap();
-
-        // Read user input
-        let mut user_response: String = String::new();
-        stdin()
-            .read_line(&mut user_response)
-            .expect("Failed to read response");
-
-        return user_response.trim().to_string();
     }
 }
 

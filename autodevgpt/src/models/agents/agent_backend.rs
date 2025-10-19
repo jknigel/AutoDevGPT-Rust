@@ -317,7 +317,7 @@ impl SpecialFunctions for AgentBackendDeveloper {
 
                     save_api_endpoints(&api_endpoints_str);
 
-                    PrintCommand::Issue.print_agent_message(
+                    PrintCommand::UnitTest.print_agent_message(
                         self.attributes.position.as_str(),
                         "Backend Code Unit Testing: Stopping Web Server after API Endpoint Testing..."
                     );
@@ -364,5 +364,33 @@ mod tests {
             .expect("Failed to execute backend developer!");
 
         dbg!(factsheet);
+    }
+
+    #[tokio::test]
+    async fn tests_backend_developer() {
+        let mut agent: AgentBackendDeveloper = AgentBackendDeveloper::new();
+
+        let factsheet_str: &str = r#"
+      {
+        "project_description": "build a website that fetches and tracks fitness progress with timezone information",
+        "project_scope": {
+          "is_crud_required": true,
+          "is_user_login_and_logout": true,
+          "is_external_urls_required": true
+        },
+        "external_urls": [
+          "http://worldtimeapi.org/api/timezone"
+        ],
+        "backend_code": null,
+        "api_endpoint_schema": null
+      }"#;
+
+        let mut factsheet: FactSheet = serde_json::from_str(factsheet_str).unwrap();
+
+        agent.attributes.state = AgentState::UnitTesting;
+        agent
+            .execute(&mut factsheet)
+            .await
+            .expect("Failed to execute Backend Developer agent");
     }
 }
