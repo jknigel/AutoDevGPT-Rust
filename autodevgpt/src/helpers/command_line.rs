@@ -2,7 +2,7 @@ use crossterm::{
     ExecutableCommand,
     style::{Color, ResetColor, SetForegroundColor},
 };
-use std::io::{stdin, stdout, Read};
+use std::io::{stdin, stdout};
 
 #[derive(PartialEq, Debug)]
 pub enum PrintCommand {

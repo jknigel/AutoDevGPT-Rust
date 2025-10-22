@@ -1,20 +1,20 @@
-use crate::ai_functions::aifunc_architect::print_project_scope;
+//use crate::ai_functions::aifunc_architect::print_project_scope;
 use crate::ai_functions::aifunc_backend::{
     print_backend_webserver_code, print_fixed_code, print_improved_webserver_code,
     print_rest_api_endpoints,
 };
 use crate::helpers::general::{
-    WEB_SERVER_PROJECT_PATH, ai_task_request_decoded, check_status_code,
+    WEB_SERVER_PROJECT_PATH, check_status_code,
     read_code_template_contents, read_exec_main_contents, save_api_endpoints, save_backend_code,
 };
 
 use crate::helpers::command_line::{PrintCommand, confirm_safe_code};
 use crate::helpers::general::ai_task_request;
 use crate::models::agent_basic::basic_agent::{AgentState, BasicAgent};
-use crate::models::agents::agent_traits::{FactSheet, ProjectScope, RouteObject, SpecialFunctions};
+use crate::models::agents::agent_traits::{FactSheet, RouteObject, SpecialFunctions};
 
 use async_trait::async_trait;
-use crossterm::style::Print;
+//use crossterm::style::Print;
 use reqwest::Client;
 use std::process::{Command, Stdio};
 use std::time::Duration;
@@ -47,7 +47,7 @@ impl AgentBackendDeveloper {
         let code_template_str: String = read_code_template_contents();
 
         // Concat Instruction
-        let mut msg_context: String = format!(
+        let msg_context: String = format!(
             "CODE TEMPLATE: {} \n PROJECT DESCRIPTION: {} \n",
             code_template_str, factsheet.project_description
         );
@@ -65,10 +65,10 @@ impl AgentBackendDeveloper {
     }
 
     async fn call_improved_backend_code(&mut self, factsheet: &mut FactSheet) {
-        let code_template_str: String = read_code_template_contents();
+        //let code_template_str: String = read_code_template_contents();
 
         // Concat Instruction
-        let mut msg_context: String = format!(
+        let msg_context: String = format!(
             "CODE TEMPLATE: {:?} \n PROJECT DESCRIPTION: {:?} \n",
             factsheet.backend_code, factsheet
         );

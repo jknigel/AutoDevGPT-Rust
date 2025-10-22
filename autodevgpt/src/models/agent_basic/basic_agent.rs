@@ -10,6 +10,7 @@ pub enum AgentState {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct BasicAgent {
     pub objective: String,
     pub position: String,

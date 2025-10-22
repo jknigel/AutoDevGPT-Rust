@@ -60,7 +60,7 @@ impl AgentSolutionArchitect {
 #[async_trait]
 impl SpecialFunctions for AgentSolutionArchitect {
     fn get_attributes_from_agent(&self) -> &BasicAgent {
-        return &self.attributes
+       return &self.attributes
     }
 
     async fn execute(&mut self, factsheet: &mut FactSheet) -> Result<(), Box<dyn std::error::Error>> {

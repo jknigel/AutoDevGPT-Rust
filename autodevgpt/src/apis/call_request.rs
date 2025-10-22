@@ -1,7 +1,7 @@
 use crate::models::general::llm::{APIResponse, ChatCompletion, Message};
 use dotenv::dotenv;
 use reqwest::Client;
-use std::{env, f64::consts::E};
+use std::{env};
 
 use reqwest::header::{HeaderMap, HeaderValue};
 

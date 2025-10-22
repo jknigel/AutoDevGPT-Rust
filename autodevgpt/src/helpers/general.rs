@@ -1,5 +1,5 @@
-use crossterm::style::Print;
-use serde::de::{self, DeserializeOwned};
+//use crossterm::style::Print;
+use serde::de::{DeserializeOwned};
 
 use crate::apis::call_request::call_gpt;
 use crate::helpers::command_line::PrintCommand;
