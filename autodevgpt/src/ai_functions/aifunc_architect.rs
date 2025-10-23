@@ -2,7 +2,7 @@ use ai_functions::ai_function;
 
 #[ai_function]
 pub fn print_project_scope(_project_description: &str) {
-    /// Input: Takes in a user request to build a website project description
+    /// Input: Takes in a user request to build a website based on a project description
     /// Function: Converts user request into JSON response of information items required for a website build.
     /// Important: At least one of the bool results must be true
     /// Output: Prints an object response in the following format:
