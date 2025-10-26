@@ -20,7 +20,7 @@ pub fn print_project_scope(_project_description: &str) {
     ///     "is_external_urls_required": bool true
     ///   }
     /// Example 2:
-    ///   user_request = "I need a simple TODO app"
+    ///   user_request = "I need a task management app"
     ///   prints:
     ///   {
     ///     "is_crud_required": true
